@@ -1,15 +1,37 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { ArrowDown, ArrowRight } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { brand } from "@/lib/products";
 import ImageWithFallback from "./ImageWithFallback";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
+// Scroll-linked transforms stutter during iOS momentum scrolling, so parallax is desktop-only.
+function useParallaxEnabled() {
+  const reduceMotion = useReducedMotion();
+  const [desktop, setDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
+    const update = () => setDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  return desktop && !reduceMotion;
+}
+
 export default function Hero() {
   const ref = useRef<HTMLElement>(null);
+  const parallax = useParallaxEnabled();
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -24,23 +46,15 @@ export default function Hero() {
       className="grain relative flex h-[calc(100svh-4rem)] min-h-[560px] items-center overflow-hidden md:h-[calc(100svh-5rem)]"
     >
       <motion.div
-        className="absolute inset-0"
-        style={{ y: imageY }}
+        className="absolute inset-0 will-change-transform"
+        style={{ y: parallax ? imageY : 0 }}
         initial={{ scale: 1.2 }}
         animate={{ scale: 1.1 }}
         transition={{ duration: 2.4, ease }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-rose-soft via-sand-100 to-sand-200">
-          <motion.div
-            className="absolute -right-24 top-10 h-[28rem] w-[28rem] rounded-full bg-rose-gold/20 blur-3xl"
-            animate={{ x: [0, -30, 0], y: [0, 20, 0] }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute bottom-0 right-1/3 h-80 w-80 rounded-full bg-sand-300/50 blur-3xl"
-            animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
-            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-          />
+          <div className="absolute -right-24 top-10 h-[28rem] w-[28rem] rounded-full bg-rose-gold/20 blur-3xl" />
+          <div className="absolute bottom-0 right-1/3 h-80 w-80 rounded-full bg-sand-300/50 blur-3xl" />
         </div>
         <ImageWithFallback
           src={brand.banner}
@@ -58,7 +72,7 @@ export default function Hero() {
       <div className="absolute inset-0 hidden bg-[radial-gradient(ellipse_at_center,rgb(250_248_245/0.9)_0%,rgb(250_248_245/0.55)_45%,transparent_75%)] md:block" />
 
       <motion.div
-        style={{ y: contentY, opacity }}
+        style={parallax ? { y: contentY, opacity } : undefined}
         className="relative mx-auto w-full max-w-7xl px-5 md:px-8"
       >
         <div className="max-w-xl md:mx-auto md:max-w-3xl md:text-center">
