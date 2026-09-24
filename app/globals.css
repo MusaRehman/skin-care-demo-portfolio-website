@@ -40,6 +40,58 @@ body {
   color: #1f1d1b;
 }
 
+.hero-blob-a,
+.hero-blob-b {
+  will-change: transform;
+}
+.hero-blob-a {
+  animation: hero-blob-a 12s ease-in-out infinite;
+}
+.hero-blob-b {
+  animation: hero-blob-b 14s ease-in-out infinite;
+}
+@keyframes hero-blob-a {
+  50% {
+    translate: -30px 20px;
+  }
+}
+@keyframes hero-blob-b {
+  50% {
+    translate: 40px -30px;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .hero-timeline {
+    view-timeline: --hero block;
+  }
+  .hero-parallax-image {
+    animation: hero-image-parallax linear both;
+  }
+  .hero-parallax-content {
+    animation: hero-content-parallax linear both;
+  }
+  .hero-parallax-image,
+  .hero-parallax-content {
+    animation-timeline: --hero;
+    animation-range: exit-crossing 0% exit-crossing 100%;
+  }
+}
+@keyframes hero-image-parallax {
+  to {
+    translate: 0 18%;
+  }
+}
+@keyframes hero-content-parallax {
+  80% {
+    opacity: 0;
+  }
+  to {
+    translate: 0 40%;
+    opacity: 0;
+  }
+}
+
 .grain::after {
   content: "";
   position: absolute;

@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-} from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { brand } from "@/lib/products";
@@ -13,25 +8,19 @@ import ImageWithFallback from "./ImageWithFallback";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-// Scroll-linked transforms stutter during iOS momentum scrolling, so parallax is desktop-only.
-function useParallaxEnabled() {
-  const reduceMotion = useReducedMotion();
-  const [desktop, setDesktop] = useState(false);
-
+// JS scroll handlers lag behind iOS momentum scrolling; CSS scroll-driven
+// animations (see .hero-parallax-* in globals.css) run on the compositor.
+function useJsParallaxFallback() {
+  const [fallback, setFallback] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px) and (pointer: fine)");
-    const update = () => setDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    setFallback(!CSS.supports("animation-timeline: view()"));
   }, []);
-
-  return desktop && !reduceMotion;
+  return fallback;
 }
 
 export default function Hero() {
   const ref = useRef<HTMLElement>(null);
-  const parallax = useParallaxEnabled();
+  const jsParallax = useJsParallaxFallback();
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end start"],
@@ -43,18 +32,18 @@ export default function Hero() {
   return (
     <section
       ref={ref}
-      className="grain relative flex h-[calc(100svh-4rem)] min-h-[560px] items-center overflow-hidden md:h-[calc(100svh-5rem)]"
+      className="grain hero-timeline relative flex h-[calc(100svh-4rem)] min-h-[560px] items-center overflow-hidden md:h-[calc(100svh-5rem)]"
     >
       <motion.div
-        className="absolute inset-0 will-change-transform"
-        style={{ y: parallax ? imageY : 0 }}
+        className="hero-parallax-image absolute inset-0 will-change-transform"
+        style={{ y: jsParallax ? imageY : 0 }}
         initial={{ scale: 1.2 }}
         animate={{ scale: 1.1 }}
         transition={{ duration: 2.4, ease }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-rose-soft via-sand-100 to-sand-200">
-          <div className="absolute -right-24 top-10 h-[28rem] w-[28rem] rounded-full bg-rose-gold/20 blur-3xl" />
-          <div className="absolute bottom-0 right-1/3 h-80 w-80 rounded-full bg-sand-300/50 blur-3xl" />
+          <div className="hero-blob-a absolute -right-24 top-10 h-[28rem] w-[28rem] rounded-full bg-rose-gold/20 blur-3xl" />
+          <div className="hero-blob-b absolute bottom-0 right-1/3 h-80 w-80 rounded-full bg-sand-300/50 blur-3xl" />
         </div>
         <ImageWithFallback
           src={brand.banner}
@@ -72,8 +61,8 @@ export default function Hero() {
       <div className="absolute inset-0 hidden bg-[radial-gradient(ellipse_at_center,rgb(250_248_245/0.9)_0%,rgb(250_248_245/0.55)_45%,transparent_75%)] md:block" />
 
       <motion.div
-        style={parallax ? { y: contentY, opacity } : undefined}
-        className="relative mx-auto w-full max-w-7xl px-5 md:px-8"
+        style={jsParallax ? { y: contentY, opacity } : { y: 0, opacity: 1 }}
+        className="hero-parallax-content relative mx-auto w-full max-w-7xl px-5 md:px-8"
       >
         <div className="max-w-xl md:mx-auto md:max-w-3xl md:text-center">
           <motion.p
